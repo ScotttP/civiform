@@ -10,10 +10,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.junit.Before;
 import org.junit.Test;
-import repository.WithResettingPostgresContainer;
+import repository.WithPostgresContainer;
 import services.question.QuestionDefinition;
 
-public class ProgramServiceImplTest extends WithResettingPostgresContainer {
+public class ProgramServiceImplTest extends WithPostgresContainer {
 
   ProgramServiceImpl ps;
 
@@ -66,6 +66,27 @@ public class ProgramServiceImplTest extends WithResettingPostgresContainer {
         ps.createProgramDefinition("ProgramService", "description");
 
     assertThat(programDefinition.id()).isNotNull();
+  }
+
+  @Test
+  public void updateProgram_withNoProgram_throwsProgramNotFoundException()
+      throws ProgramNotFoundException {
+    assertThatThrownBy(() -> ps.updateProgramDefinition(1L, "new", "new description"))
+        .isInstanceOf(ProgramNotFoundException.class)
+        .hasMessage("Program not found for ID: 1");
+  }
+
+  @Test
+  public void updateProgram_updatesProgram() throws ProgramNotFoundException {
+    ProgramDefinition originalProgram =
+        ps.createProgramDefinition("original", "original description");
+    ProgramDefinition updatedProgram =
+        ps.updateProgramDefinition(originalProgram.id(), "new", "new description");
+
+    Optional<ProgramDefinition> found = ps.getProgramDefinition(updatedProgram.id());
+
+    assertThat(ps.listProgramDefinitions()).hasSize(1);
+    assertThat(found).hasValue(updatedProgram);
   }
 
   @Test
@@ -133,7 +154,7 @@ public class ProgramServiceImplTest extends WithResettingPostgresContainer {
     QuestionDefinition questionDefinition =
         new QuestionDefinition(
             1L,
-            "version",
+            1L,
             "name question",
             "applicant.name",
             "The name of the applicant.",
