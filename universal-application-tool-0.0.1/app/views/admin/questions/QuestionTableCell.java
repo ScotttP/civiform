@@ -1,7 +1,6 @@
 package views.admin.questions;
 
 import static j2html.TagCreator.a;
-import static j2html.TagCreator.span;
 import static j2html.TagCreator.td;
 
 import j2html.tags.Tag;
@@ -57,13 +56,12 @@ enum QuestionTableCell {
       case QUESTION_TYPE:
         return td(definition.getQuestionType().toString());
       case ACTIONS:
-        return td().with(span("view"))
-            .with(span(" | "))
-            .with(
-                a("edit")
-                    .withHref(
-                        controllers.admin.routes.QuestionController.edit(definition.getPath())
-                            .url()));
+        return td(a("edit")
+                .withClasses("text-indigo-600", "hover:text-indigo-900")
+                .withHref(
+                    controllers.admin.routes.QuestionController.edit(definition.getPath()).url()))
+            .withClasses(
+                "px-6", "py-4", "whitespace-nowrap", "text-right", "text-sm", "font-medium");
       default:
         return td("");
     }

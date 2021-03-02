@@ -20,12 +20,14 @@ import services.question.QuestionService;
 import services.question.UnsupportedQuestionTypeException;
 import views.admin.questions.QuestionEditView;
 import views.admin.questions.QuestionsListView;
+import views.components.questions.QuestionListComponent;
 
 public class QuestionController extends Controller {
   final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
   private final QuestionService service;
   private final QuestionsListView listView;
+  private final QuestionListComponent listComponent;
   private final QuestionEditView editView;
   private final FormFactory formFactory;
   private final HttpExecutionContext httpExecutionContext;
@@ -34,11 +36,13 @@ public class QuestionController extends Controller {
   public QuestionController(
       QuestionService service,
       QuestionsListView listView,
+      QuestionListComponent listComponent,
       QuestionEditView editView,
       FormFactory formFactory,
       HttpExecutionContext httpExecutionContext) {
     this.service = checkNotNull(service);
     this.listView = checkNotNull(listView);
+    this.listComponent = checkNotNull(listComponent);
     this.editView = checkNotNull(editView);
     this.formFactory = checkNotNull(formFactory);
     this.httpExecutionContext = checkNotNull(httpExecutionContext);
@@ -90,7 +94,7 @@ public class QuestionController extends Controller {
             readOnlyService -> {
               switch (renderAs) {
                 case "list":
-                  return ok(listView.renderAsList(readOnlyService.getAllQuestions()));
+                  return ok(listComponent.renderPage(readOnlyService.getAllQuestions()));
                 case "table":
                   return ok(listView.renderAsTable(readOnlyService.getAllQuestions()));
                 default:
