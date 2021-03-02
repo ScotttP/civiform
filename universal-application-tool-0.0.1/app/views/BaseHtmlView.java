@@ -1,6 +1,7 @@
 package views;
 
 import static j2html.TagCreator.br;
+import static j2html.TagCreator.div;
 import static j2html.TagCreator.h1;
 import static j2html.TagCreator.input;
 import static j2html.TagCreator.label;
@@ -19,6 +20,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Optional;
 import play.mvc.Http;
 import views.html.helper.CSRF;
+import views.Styles;
 
 /**
  * Base class for all HTML views. Provides stateless convenience methods for generating HTML.
@@ -32,15 +34,33 @@ public abstract class BaseHtmlView {
     return h1(headerText);
   }
 
-  protected ImmutableList<DomContent> textInputWithLabel(
-      String labelValue, String inputId, Optional<String> value) {
-    Tag labelTag = label(labelValue).attr(Attr.FOR, inputId);
-    Tag inputTag = input().withType("text").withId(inputId).withName(inputId);
+  public ImmutableList<DomContent> fieldWithLabel(String labelValue, String inputId, Tag fieldTag, Optional<String> value)
+  {
+    Tag labelTag = label(labelValue).attr(Attr.FOR, inputId)
+          .withClasses(Styles._MX_1, Styles.BLOCK, Styles.UPPERCASE, Styles.TRACKING_WIDE, Styles.TEXT_GRAY_600, Styles.TEXT_XS, Styles.FONT_BOLD, Styles.MB_2);
+    
+    fieldTag.withId(inputId).withName(inputId).withClasses(Styles.BLOCK, Styles.W_FULL, Styles.BG_GRAY_50, Styles.BORDER, Styles.BORDER_GRAY_500,
+    Styles.P_2);
+    
     if (value.isPresent()) {
-      inputTag.withValue(value.get());
+      fieldTag.withValue(value.get());
     }
 
-    return ImmutableList.of(labelTag, br(), inputTag, br(), br());
+    Tag wrappingDiv = div(labelTag, fieldTag).withClasses(Styles.MX_4, Styles.MB_6);
+    return ImmutableList.of(wrappingDiv);
+  }
+
+  public ImmutableList<DomContent> textAreaWithLabel(
+      String labelValue, String inputId, String value) {
+    Optional<String> optionalValue = Optional.ofNullable(value).filter(s -> !s.trim().isEmpty());
+
+    return textAreaWithLabel(labelValue, inputId, optionalValue);
+  }
+  
+  public ImmutableList<DomContent> textAreaWithLabel(
+      String labelValue, String inputId, Optional<String> value) {
+        Tag fieldTag = textarea().withType("text");
+        return fieldWithLabel(labelValue, inputId, fieldTag, value);
   }
 
   public ImmutableList<DomContent> textInputWithLabel(
@@ -50,21 +70,12 @@ public abstract class BaseHtmlView {
     return textInputWithLabel(labelValue, inputId, optionalValue);
   }
 
-  public ImmutableList<DomContent> textAreaWithLabel(
+  protected ImmutableList<DomContent> textInputWithLabel(
       String labelValue, String inputId, Optional<String> value) {
-    Tag labelTag = label(labelValue).attr(Attr.FOR, inputId);
-    Tag textAreaTag = textarea(value.orElse("")).withType("text").withId(inputId).withName(inputId);
-
-    return ImmutableList.of(labelTag, br(), textAreaTag, br(), br());
+    Tag fieldTag = input().withType("text");
+    return fieldWithLabel(labelValue, inputId, fieldTag, value);
   }
-
-  public ImmutableList<DomContent> textAreaWithLabel(
-      String labelValue, String inputId, String value) {
-    Optional<String> optionalValue = Optional.ofNullable(value).filter(s -> !s.trim().isEmpty());
-
-    return textAreaWithLabel(labelValue, inputId, optionalValue);
-  }
-
+  
   protected Tag textField(String fieldName, String labelText) {
     return label()
         .with(text(labelText), input().withType("text").withName(fieldName))

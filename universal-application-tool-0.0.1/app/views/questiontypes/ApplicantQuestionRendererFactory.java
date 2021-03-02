@@ -1,8 +1,14 @@
 package views.questiontypes;
 
 import services.applicant.ApplicantQuestion;
+import services.question.QuestionDefinition;
 
 public class ApplicantQuestionRendererFactory {
+
+  public ApplicantQuestionRenderer getRenderer(QuestionDefinition definition) {
+    ApplicantQuestion question = new ApplicantQuestion(definition);
+    return getRenderer(question);
+  }
 
   public ApplicantQuestionRenderer getRenderer(ApplicantQuestion question) {
     switch (question.getType()) {

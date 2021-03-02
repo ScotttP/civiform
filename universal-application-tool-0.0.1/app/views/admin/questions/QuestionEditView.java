@@ -4,6 +4,7 @@ import static j2html.TagCreator.body;
 import static j2html.TagCreator.br;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.form;
+import static j2html.TagCreator.head;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -17,25 +18,26 @@ import play.twirl.api.Content;
 import services.question.QuestionDefinition;
 import services.question.QuestionType;
 import views.BaseHtmlLayout;
-import views.BaseHtmlView;
+import views.ViewUtils;
 
-public final class QuestionEditView extends BaseHtmlView {
-  private final BaseHtmlLayout layout;
+public final class QuestionEditView extends BaseHtmlLayout {
 
   @Inject
-  public QuestionEditView(BaseHtmlLayout layout) {
-    this.layout = layout;
+  public QuestionEditView(ViewUtils viewUtils) {
+    super(viewUtils);
   }
 
   public Content renderNewQuestionForm(Request request) {
-    return layout.htmlContent(
+    return htmlContent(
+        head(tailwindStyles()),
         body(
             renderHeader("New Question"),
             buildNewQuestionForm().with(makeCsrfTokenInputTag(request))));
   }
 
   public Content renderEditQuestionForm(Request request, QuestionDefinition question) {
-    return layout.htmlContent(
+    return htmlContent(
+        head(tailwindStyles()),
         body(
             renderHeader("Edit Question"),
             buildEditQuestionForm(question).with(makeCsrfTokenInputTag(request))));

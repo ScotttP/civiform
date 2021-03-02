@@ -18,6 +18,10 @@ public class ApplicantQuestion {
   private final QuestionDefinition questionDefinition;
   private final ApplicantData applicantData;
 
+  public ApplicantQuestion(QuestionDefinition definition) {
+    this(definition, new ApplicantData());
+  }
+
   ApplicantQuestion(QuestionDefinition questionDefinition, ApplicantData applicantData) {
     this.questionDefinition = checkNotNull(questionDefinition);
     this.applicantData = checkNotNull(applicantData);
