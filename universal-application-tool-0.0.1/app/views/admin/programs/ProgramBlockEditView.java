@@ -146,6 +146,19 @@ public class ProgramBlockEditView extends BaseHtmlView {
 
   private ContainerTag blockEditPanel(
       Tag csrfTag, ProgramDefinition program, BlockDefinition block) {
+    ContainerTag questionList = ul().withId("blockQuestions");
+    block
+        .programQuestionDefinitions()
+        .forEach(
+            pqd ->
+                questionList.with(
+                    li(
+                        checkboxInputWithLabel(
+                            pqd.getQuestionDefinition().getName(),
+                            "block-question-" + pqd.getQuestionDefinition().getId(),
+                            "block-question-" + pqd.getQuestionDefinition().getId(),
+                            String.valueOf(pqd.getQuestionDefinition().getId())))));
+
     return div()
         .withClass(Styles.FLEX_AUTO)
         .with(blockEditPanelTop(csrfTag, program, block))
@@ -162,7 +175,16 @@ public class ProgramBlockEditView extends BaseHtmlView {
                     .withAction(
                         controllers.admin.routes.AdminProgramBlocksController.update(
                                 program.id(), block.id())
-                            .url())));
+                            .url()),
+                form()
+                    .withMethod("post")
+                    .withAction(
+                        controllers.admin.routes.AdminProgramBlockQuestionsController.destroy(
+                                program.id(), block.id())
+                            .url())
+                    .with(csrfTag)
+                    .with(questionList)
+                    .with(submitButton("Remove questions"))));
   }
 
   private ContainerTag blockEditPanelTop(
