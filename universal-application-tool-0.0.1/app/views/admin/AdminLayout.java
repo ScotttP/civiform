@@ -21,4 +21,9 @@ public class AdminLayout extends BaseHtmlLayout {
   public Content render(DomContent... mainDomContents) {
     return htmlContent(head(tailwindStyles()), body(main(mainDomContents)));
   }
+
+  /** Renders mainDomContents within the main tag, in the context of the admin layout. */
+  public Content renderBody(DomContent bodyContent) {
+    return htmlContent(head(tailwindStyles()), body().with(bodyContent));
+  }
 }
