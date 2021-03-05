@@ -25,6 +25,6 @@
   }
 
   main {
-    @apply max-w-screen-xl mx-auto;
+    @apply flex-1 max-h-full overflow-hidden;
   }
 }
