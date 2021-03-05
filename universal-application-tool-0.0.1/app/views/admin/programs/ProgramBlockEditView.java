@@ -3,6 +3,7 @@ package views.admin.programs;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static j2html.TagCreator.a;
 import static j2html.TagCreator.div;
+import static j2html.TagCreator.form;
 import static j2html.TagCreator.h1;
 import static j2html.TagCreator.input;
 import static j2html.TagCreator.p;
@@ -49,11 +50,13 @@ public class ProgramBlockEditView extends BaseHtmlView {
       BlockDefinition block,
       ImmutableList<QuestionDefinition> questions) {
 
+    Tag csrfTag = makeCsrfTokenInputTag(request);
     return layout.renderBody(
         div()
             .withClasses(BG_COLOR, TEXT_COLOR)
             .with(
-                renderHeaderSection(program.name()), renderMainContent(program, block, questions)));
+                renderHeaderSection(program.name()),
+                renderMainContent(program, block, questions, csrfTag)));
   }
 
   private Tag renderHeaderSection(String appTitle) {
@@ -75,20 +78,27 @@ public class ProgramBlockEditView extends BaseHtmlView {
   private Tag renderMainContent(
       ProgramDefinition program,
       BlockDefinition block,
-      ImmutableList<QuestionDefinition> questions) {
+      ImmutableList<QuestionDefinition> questions,
+      Tag csrfTag) {
     return div()
         .withClasses("flex p-relative h-screen pt-8")
-        .with(renderMain(program, block), renderQuestionBank(questions, program));
+        .with(
+            renderMain(program, block, csrfTag),
+            renderQuestionBank(questions, program, block, csrfTag));
   }
 
-  private Tag renderMain(ProgramDefinition program, BlockDefinition focusedBlock) {
-    return div(blockOrderPanel(program, focusedBlock), renderAddBlockTag(program))
+  private Tag renderMain(ProgramDefinition program, BlockDefinition focusedBlock, Tag csrfTag) {
+    return div(blockOrderPanel(program, focusedBlock, csrfTag), renderAddBlockTag(program))
         .withClass("inline-block w-1/2 m-0 pt-8 pr-12")
         .withStyle("width: calc(100% - 375px);");
   }
 
-  private Tag renderQuestionBank(ImmutableList<QuestionDefinition> questions, ProgramDefinition program) {
-    return div(questionBankPanel(questions, program))
+  private Tag renderQuestionBank(
+      ImmutableList<QuestionDefinition> questions,
+      ProgramDefinition program,
+      BlockDefinition focusedBlock,
+      Tag csrfTag) {
+    return div(questionBankPanel(questions, program, focusedBlock, csrfTag))
         .withClass("inline-block w-1/3 m-0 pt-12 pb-12 pr-4")
         .withStyle("width: 375px;");
   }
@@ -104,7 +114,8 @@ public class ProgramBlockEditView extends BaseHtmlView {
                 + " ring-offset-2");
   }
 
-  private ContainerTag blockOrderPanel(ProgramDefinition program, BlockDefinition focusedBlock) {
+  private ContainerTag blockOrderPanel(
+      ProgramDefinition program, BlockDefinition focusedBlock, Tag csrfTag) {
     ContainerTag ret = div();
     for (BlockDefinition block : program.blockDefinitions()) {
       String editBlockLink =
@@ -124,23 +135,51 @@ public class ProgramBlockEditView extends BaseHtmlView {
 
       // Render questions in block
       if (block.getQuestionCount() > 0) {
+        ContainerTag deleteQuestionForm =
+            form()
+                .withMethod("post")
+                .withAction(
+                    controllers.admin.routes.AdminProgramBlockQuestionsController.destroy(
+                            program.id(), block.id())
+                        .url())
+                .with(csrfTag);
         ContainerTag questionsInBlock = div().withClasses("pl-8 ml-12 text-sm");
         for (ProgramQuestionDefinition question : block.programQuestionDefinitions()) {
           String questionNameText = question.getQuestionDefinition().getName();
           QuestionType questionType = question.getQuestionDefinition().getQuestionType();
-          ContainerTag questionIcon = renderQuestionTypeSvg(questionType, 24).withClasses("flex-shrink-0 h-5 w-5 mt-1 mr-1 text-sm");
+          ContainerTag questionIcon =
+              renderQuestionTypeSvg(questionType, 24)
+                  .withClasses(Styles.FLEX_SHRINK_0, "h-5 w-5 mt-1 mr-1 text-sm");
           ContainerTag questionName = p(questionNameText).withClasses("p-1");
-          ContainerTag questionDiv = div(questionIcon, questionName).withClasses("flex my-2");          
+          String questionId = question.getQuestionDefinition().getId() + ""; 
+          Tag deleteButton =
+              submitButton("-")
+                  .withId("block-question-" + questionId)
+                  .withName("block-question-" + questionId)
+                  .withValue(questionId)
+                  .withClasses("hidden");
+          ContainerTag questionDiv =
+              div(questionIcon, questionName, deleteButton)
+                  .withClasses("flex my-2")
+                  .attr(
+                      "onclick",
+                      "document.getElementById('block-question-"
+                          + questionId
+                          + "').click()");
           questionsInBlock.with(questionDiv);
         }
-        ret.with(questionsInBlock);
+        ret.with(deleteQuestionForm.with(questionsInBlock));
       }
     }
 
     return ret;
   }
 
-  private ContainerTag questionBankPanel(ImmutableList<QuestionDefinition> questionDefinitions, ProgramDefinition program) {
+  private ContainerTag questionBankPanel(
+      ImmutableList<QuestionDefinition> questionDefinitions,
+      ProgramDefinition program,
+      BlockDefinition focusedBlock,
+      Tag csrfTag) {
     ContainerTag ret =
         div().withClasses("inline-block w-1/3 m-0 pb-6 pr-4").withStyle("width: 375px;");
     ContainerTag innerDiv =
@@ -181,10 +220,20 @@ public class ProgramBlockEditView extends BaseHtmlView {
         ImmutableList.sortedCopyOf(
             Comparator.comparing(QuestionDefinition::getName), questionDefinitions);
 
+    ContainerTag contentForm =
+        form()
+            .withMethod("POST")
+            .withAction(
+                controllers.admin.routes.AdminProgramBlockQuestionsController.create(
+                        program.id(), focusedBlock.id())
+                    .url());
+    contentForm.with(csrfTag);
+    contentDiv.with(contentForm);
+
     sortedQuestions.stream()
         .filter(question -> !program.hasQuestion(question))
         .forEach(
-            questionDefinition -> contentDiv.with(renderQuesitonDefinition(questionDefinition)));
+            questionDefinition -> contentForm.with(renderQuesitonDefinition(questionDefinition)));
 
     return ret;
   }
@@ -192,9 +241,18 @@ public class ProgramBlockEditView extends BaseHtmlView {
   private ContainerTag renderQuesitonDefinition(QuestionDefinition definition) {
     ContainerTag ret =
         div()
+            .attr(
+                "onclick", "document.getElementById('question-" + definition.getId() + "').click()")
             .withClasses(
                 "-m-3 p-3 flex items-start rounded-lg hover:bg-gray-200 hover:text-gray-800"
                     + " transition-all transform hover:scale-105");
+
+    Tag addButton =
+        submitButton("+")
+            .withId("question-" + definition.getId())
+            .withName("question-" + definition.getId())
+            .withValue(definition.getId() + "")
+            .withClasses("hidden");
 
     ContainerTag icon =
         renderQuestionTypeSvg(definition.getQuestionType(), 24)
@@ -204,7 +262,8 @@ public class ProgramBlockEditView extends BaseHtmlView {
             .withClasses("ml-4")
             .with(
                 p(definition.getName()).withClasses("text-base font-medium text-primaryText"),
-                p(definition.getDescription()).withClasses("mt-1 text-sm text-secondaryText"));
+                p(definition.getDescription()).withClasses("mt-1 text-sm text-secondaryText"),
+                addButton);
     return ret.with(icon, content);
   }
 
